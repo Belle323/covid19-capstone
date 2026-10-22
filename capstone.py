@@ -29,9 +29,8 @@ except Exception:
 st.caption("Source: Johns Hopkins CSSE COVID-19 time-series repository. Historical reporting ends in March 2023; this is not a live COVID-19 tracker.")
 
 countries = st.multiselect("Choose countries (add or remove as many as you like)",
-                           list(cumulative.columns), default=["Taiwan*", "Japan", "US"])
+                           list(cumulative.columns), default=["US", "Japan", "Taiwan*"])
 view = st.radio("Case count", ["Daily new cases", "Cumulative cases"], horizontal=True)
-smoothing = st.checkbox("Show 7-day moving average (daily cases only)", value=False)
 
 if not countries:
     st.info("Select at least one country to display the chart.")
@@ -45,9 +44,7 @@ else:
     chart_data = cumulative[countries].diff().iloc[1:]
     # Negative values represent retrospective corrections, not negative infections.
     chart_data = chart_data.clip(lower=0)
-    if smoothing:
-        chart_data = chart_data.rolling(7, min_periods=1).mean()
-    y_label = "Daily reported new cases" + (" (7-day average)" if smoothing else "")
+    y_label = "Daily reported new cases"
 
 plot_data = chart_data.reset_index().rename(columns={"index": "Date"})
 plot_data = plot_data.melt(id_vars="Date", var_name="Country", value_name="Cases")
@@ -61,7 +58,7 @@ if view == "Cumulative cases":
     totals = cumulative[countries].iloc[-1]
     comparison_label = "Cumulative confirmed cases at last reporting date"
 else:
-    totals = chart_data.sum() if not smoothing else cumulative[countries].iloc[-1] - cumulative[countries].iloc[0]
+    totals = chart_data.sum()
     comparison_label = "Reported cases across the historical period"
 comparison = pd.DataFrame({"Country": totals.index, "Cases": totals.values})
 st.plotly_chart(px.bar(comparison, x="Country", y="Cases", color="Country",
@@ -124,5 +121,5 @@ st.markdown("[World Bank population data](https://data.worldbank.org/indicator/S
 
 st.subheader("Explore the data")
 st.dataframe(chart_data.tail(30).sort_index(ascending=False), use_container_width=True)
-st.caption("Daily case counts are computed from differences in cumulative reports. Negative corrections are displayed as zero in the daily chart; this may cause summed daily counts to differ from cumulative totals. The comparison chart uses cumulative differences when a 7-day average is enabled.")
+st.caption("Daily case counts are computed from differences in cumulative reports. Negative corrections are displayed as zero in the daily chart; this may cause summed daily counts to differ from cumulative totals.")
 st.markdown("[Original CSSE data and documentation](https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_time_series)")

@@ -34,7 +34,7 @@ except Exception:
 
 st.caption("Source: Johns Hopkins CSSE historical time series (through March 9, 2023). Not a live tracker.")
 countries = st.multiselect("Choose countries", list(cumulative.columns),
-                           default=["US", "Japan", "Taiwan*"])
+                           default=["Taiwan*", "Japan", "US"])
 view = st.radio("Case count", ["Daily new cases", "Cumulative cases"], horizontal=True)
 if not countries:
     st.info("Choose at least one country.")

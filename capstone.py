@@ -28,7 +28,7 @@ except Exception:
 st.caption("Source: Johns Hopkins CSSE COVID-19 time-series repository. Historical reporting ends in March 2023; this is not a live COVID-19 tracker.")
 
 countries = st.multiselect("Choose countries (add or remove as many as you like)",
-                           list(cumulative.columns), default=["US", "India", "Brazil"])
+                           list(cumulative.columns), default=["Taiwan*", "Japan", "US"])
 view = st.radio("Case count", ["Daily new cases", "Cumulative cases"], horizontal=True)
 smoothing = st.checkbox("Show 7-day moving average (daily cases only)", value=False)
 

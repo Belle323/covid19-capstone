@@ -116,7 +116,7 @@ st.caption("Reported CFR = cumulative reported deaths / cumulative confirmed cas
            "Under-ascertainment, reporting delays, age structure, and country-specific definitions limit comparisons.")
 
 st.subheader("View Underlying Data")
-st.dataframe(chart_data.tail(30).sort_index(ascending=False), use_container_width=True)
+st.dataframe(chart_data.sort_index(ascending=False), use_container_width=True)
 st.caption("Daily cases are differences between consecutive cumulative reports. Negative retrospective revisions are shown as zero "
            "in daily charts, so summed daily counts may differ from cumulative totals.")
 st.markdown("[Johns Hopkins CSSE source and documentation](https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_time_series)")

@@ -1,4 +1,5 @@
 import pandas as pd
+import requests
 import plotly.express as px
 import streamlit as st
 
@@ -28,7 +29,7 @@ except Exception:
 st.caption("Source: Johns Hopkins CSSE COVID-19 time-series repository. Historical reporting ends in March 2023; this is not a live COVID-19 tracker.")
 
 countries = st.multiselect("Choose countries (add or remove as many as you like)",
-                           list(cumulative.columns), default=["Taiwan*", "Japan", "US"])
+                           list(cumulative.columns), default=["US", "Japan", "Taiwan*"])
 view = st.radio("Case count", ["Daily new cases", "Cumulative cases"], horizontal=True)
 smoothing = st.checkbox("Show 7-day moving average (daily cases only)", value=False)
 
@@ -65,6 +66,61 @@ else:
 comparison = pd.DataFrame({"Country": totals.index, "Cases": totals.values})
 st.plotly_chart(px.bar(comparison, x="Country", y="Cases", color="Country",
                        title=comparison_label), use_container_width=True)
+
+st.subheader("Population-adjusted comparison")
+st.write("Cumulative reported cases per 100,000 residents (using 2022 population).")
+
+# World Bank 2022 population data; Taiwan is not included in the World Bank API.
+@st.cache_data
+def load_population():
+    response = requests.get(
+        "https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL",
+        params={"date": "2022", "format": "json", "per_page": 20000},
+        timeout=30,
+    )
+    response.raise_for_status()
+    records = response.json()[1]
+    return {r["country"]["value"]: r["value"] for r in records if r["value"] is not None}
+
+# CSSE country labels that differ from World Bank labels.
+country_names = {
+    "US": "United States", "Korea, South": "Korea, Rep.",
+    "Russia": "Russian Federation", "Egypt": "Egypt, Arab Rep.",
+    "Iran": "Iran, Islamic Rep.", "Turkey": "Turkiye",
+    "Vietnam": "Viet Nam", "Slovakia": "Slovak Republic",
+    "Kyrgyzstan": "Kyrgyz Republic", "Congo (Kinshasa)": "Congo, Dem. Rep.",
+    "Congo (Brazzaville)": "Congo, Rep.",
+}
+
+try:
+    population = load_population()
+except (requests.RequestException, ValueError, IndexError, KeyError):
+    population = {}
+    st.warning("World Bank population data could not be loaded. Try again later.")
+
+# Taiwan 2022 population (Taiwan Ministry of the Interior year-end figure).
+population["Taiwan*"] = 23264640
+
+rows = []
+missing = []
+for country in countries:
+    name = country_names.get(country, country)
+    pop = population.get(name)
+    if pop and pop > 0:
+        cases = cumulative[country].iloc[-1]
+        rows.append({"Country": country, "Cases per 100,000": cases / pop * 100000})
+    else:
+        missing.append(country)
+
+if rows:
+    rates = pd.DataFrame(rows)
+    st.plotly_chart(px.bar(rates, x="Country", y="Cases per 100,000", color="Country",
+                           title="Cumulative reported cases per 100,000 population"),
+                    use_container_width=True)
+if missing:
+    st.info("Population data unavailable for: " + ", ".join(missing) + ". These countries are omitted from the population-adjusted chart.")
+st.caption("Population denominator: 2022 World Bank population indicator SP.POP.TOTL; Taiwan*: 2022 year-end population from Taiwan Ministry of the Interior (23,264,640). Rates count reported cases, not unique infected individuals; reinfections and reporting differences affect comparisons.")
+st.markdown("[World Bank population data](https://data.worldbank.org/indicator/SP.POP.TOTL) · [Taiwan Ministry of the Interior](https://www.moi.gov.tw/)")
 
 st.subheader("Explore the data")
 st.dataframe(chart_data.tail(30).sort_index(ascending=False), use_container_width=True)

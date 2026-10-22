@@ -34,7 +34,7 @@ except Exception:
 
 st.caption("Source: Johns Hopkins CSSE historical time series (through March 9, 2023). Not a live tracker.")
 countries = st.multiselect("Choose countries", list(cumulative.columns),
-                           default=["Taiwan*", "Japan", "US"])
+                           default=["US", "Japan", "Taiwan*"])
 view = st.radio("Case count", ["Daily new cases", "Cumulative cases"], horizontal=True)
 if not countries:
     st.info("Choose at least one country.")
@@ -53,35 +53,7 @@ fig = px.line(plot_data, x="Date", y="Cases", color="Country", title=label)
 fig.update_layout(hovermode="x unified")
 st.plotly_chart(fig, use_container_width=True)
 
-st.subheader("2. Reported case-fatality ratio (CFR)")
-st.write("Compare cumulative reported deaths divided by cumulative reported confirmed cases on a selected date.")
-comparison_date = st.date_input("Select comparison date", value=cumulative.index.max().date(),
-                                min_value=cumulative.index.min().date(), max_value=cumulative.index.max().date())
-selected_date = pd.Timestamp(comparison_date)
-# Dates in the source are daily, so selected_date is an exact row.
-case_counts = cumulative.loc[selected_date, countries]
-death_counts = deaths.loc[selected_date, countries]
-rows = []
-for country in countries:
-    cases = case_counts[country]
-    dead = death_counts[country]
-    if cases > 0:
-        rows.append({"Country": country, "CFR (%)": dead / cases * 100,
-                     "Confirmed cases": int(cases), "Reported deaths": int(dead)})
-if rows:
-    cfr = pd.DataFrame(rows)
-    fig_cfr = px.bar(cfr, x="Country", y="CFR (%)", color="Country",
-                     hover_data=["Confirmed cases", "Reported deaths"],
-                     title=f"Reported CFR on {selected_date:%Y-%m-%d}")
-    st.plotly_chart(fig_cfr, use_container_width=True)
-    st.dataframe(cfr, use_container_width=True, hide_index=True)
-else:
-    st.info("No reported confirmed cases on this date for the selected countries.")
-st.caption("Reported CFR = cumulative reported deaths / cumulative confirmed cases × 100. "
-           "This is not the infection-fatality ratio or an individual's risk of death. "
-           "Under-ascertainment, reporting delays, age structure, and country-specific definitions limit comparisons.")
-
-st.subheader("3. Population-adjusted case trends")
+st.subheader("2. Population-adjusted case trends")
 st.write("Cases per 100,000 population over time, using 2022 population denominators.")
 country_names = {"US": "United States", "Korea, South": "Korea, Rep.",
                  "Russia": "Russian Federation", "Egypt": "Egypt, Arab Rep.",
@@ -114,6 +86,34 @@ if missing:
 st.caption("Population: World Bank 2022 indicator SP.POP.TOTL; Taiwan*: Taiwan Ministry of the Interior 2022 year-end population (23,264,640). "
            "Reported cases may include reinfections and are not the percentage of unique people infected.")
 st.markdown("[World Bank population data](https://data.worldbank.org/indicator/SP.POP.TOTL) · [Taiwan Ministry of the Interior](https://www.moi.gov.tw/)")
+
+st.subheader("3. Reported case-fatality ratio (CFR)")
+st.write("Compare cumulative reported deaths divided by cumulative reported confirmed cases on a selected date.")
+comparison_date = st.date_input("Select comparison date", value=cumulative.index.max().date(),
+                                min_value=cumulative.index.min().date(), max_value=cumulative.index.max().date())
+selected_date = pd.Timestamp(comparison_date)
+# Dates in the source are daily, so selected_date is an exact row.
+case_counts = cumulative.loc[selected_date, countries]
+death_counts = deaths.loc[selected_date, countries]
+rows = []
+for country in countries:
+    cases = case_counts[country]
+    dead = death_counts[country]
+    if cases > 0:
+        rows.append({"Country": country, "CFR (%)": dead / cases * 100,
+                     "Confirmed cases": int(cases), "Reported deaths": int(dead)})
+if rows:
+    cfr = pd.DataFrame(rows)
+    fig_cfr = px.bar(cfr, x="Country", y="CFR (%)", color="Country",
+                     hover_data=["Confirmed cases", "Reported deaths"],
+                     title=f"Reported CFR on {selected_date:%Y-%m-%d}")
+    st.plotly_chart(fig_cfr, use_container_width=True)
+    st.dataframe(cfr, use_container_width=True, hide_index=True)
+else:
+    st.info("No reported confirmed cases on this date for the selected countries.")
+st.caption("Reported CFR = cumulative reported deaths / cumulative confirmed cases × 100. "
+           "This is not the infection-fatality ratio or an individual's risk of death. "
+           "Under-ascertainment, reporting delays, age structure, and country-specific definitions limit comparisons.")
 
 st.subheader("Explore the data")
 st.dataframe(chart_data.tail(30).sort_index(ascending=False), use_container_width=True)

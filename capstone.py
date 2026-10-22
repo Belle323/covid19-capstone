@@ -115,7 +115,7 @@ st.caption("Reported CFR = cumulative reported deaths / cumulative confirmed cas
            "This is not the infection-fatality ratio or an individual's risk of death. "
            "Under-ascertainment, reporting delays, age structure, and country-specific definitions limit comparisons.")
 
-st.subheader("Explore the data")
+st.subheader("View Underlying Data")
 st.dataframe(chart_data.tail(30).sort_index(ascending=False), use_container_width=True)
 st.caption("Daily cases are differences between consecutive cumulative reports. Negative retrospective revisions are shown as zero "
            "in daily charts, so summed daily counts may differ from cumulative totals.")
